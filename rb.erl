@@ -1,18 +1,19 @@
-% Узел дерева: {Key, Color, ParentPid, LeftPid, RightPid}
-% Лист дерева: {nil, black, nil,       nil,     nil}
+% Tree node: {Key, Color, ParentPid, LeftPid, RightPid}
+% Tree leaf: {nil, black, nil,       nil,     nil}
 
 -module(rb).
 -compile(export_all).
 %-export([start/0, stop/0, search/1, insert/1, showTree/0]).
--include_lib("eunit/include/eunit.hrl").	% Тесты
+-include_lib("eunit/include/eunit.hrl").	% Tests
 
 
 
 
-%-------------------------------------------------Запуск и остановка------------------------------------------------------------
+%----------------------------Starting and stopping the working of tree and user process----------------------------------
 start() ->
 	register(userPid, spawn(fun() -> userLoop() end)),
-	register(root,    spawn(fun() -> nodeLoop({nil, black, nil, nil, nil}) end)).
+	register(root,    spawn(fun() -> nodeLoop({nil, black, nil, nil, nil}) end)). 		% Fictitious root. 
+					% The node has an empty left subtree and a real tree in the right subtree 
 	
 stop() ->
  	userPid ! stop.
@@ -22,8 +23,8 @@ stop() ->
 
 
 
-%-----------------------------------------------Функции пользователя----------------------------------------------
-insert(Key) ->
+%-----------------------------------------------User functions----------------------------------------------
+insert(Key) ->									
 	userPid ! {insert, Key},
 	{ok, insert}.
 	
@@ -33,63 +34,63 @@ search(Key) ->
 
 
 
-showTree() ->									% Вывод дерева
+showTree() ->								
 	RootPid = whereis(root),
 	printTree(RootPid).
 	
-printTree(nil) ->								% Если дерево пусто - не печатаем
+printTree(nil) ->								% If tree is empty - don't print
 	nil;			
 		
-printTree(Pid) ->								% Если дерево не пусто
-	printSubTree(left,  Pid),							% Печатаем левое поддерево
-	printRoot(Pid),									% Печатаем корень дерева
-	printSubTree(right, Pid).							% Печатаем правое поддерево
+printTree(Pid) ->								% If tree isn't empty
+	printSubTree(left,  Pid),							
+	printRoot(Pid),								
+	printSubTree(right, Pid).						
 	
-printRoot(Pid) ->								% Печать корня
-	Key = getNodeKey(Pid),								% Получим значение корня
-	Color = getNodeColor(Pid),							% Получим цвет корня
-	io:format("Key: ~p  Color: ~p  ID: ~p ~n", [Key, Color, Pid]).			% Печатаем
+printRoot(Pid) ->								
+	Key = getNodeKey(Pid),								
+	Color = getNodeColor(Pid),						
+	io:format("Key: ~p  Color: ~p  ID: ~p ~n", [Key, Color, Pid]).			
 	
-printSubTree(left, Pid) ->							% Печать левого поддерева
-	LeftPid = getNodeLeftPid(Pid),							% Получим ID корня левого поддерева
-	printTree(LeftPid);								% Рачпечатаем левое поддерево
+printSubTree(left, Pid) ->							
+	LeftPid = getNodeLeftPid(Pid),						
+	printTree(LeftPid);								
 	
-printSubTree(right, Pid) ->							% Печать правого поддерева
-	RightPid = getNodeRightPid(Pid),						% Получим ID корня правого поддерева 
-	printTree(RightPid).								% Распечатаем правое поддерево
+printSubTree(right, Pid) ->						
+	RightPid = getNodeRightPid(Pid),					
+	printTree(RightPid).							
 
 
 
 
 
-%-----------------------------------------Функции запросов к узлу--------------------------------------------------------------
-getNodeKey(nil) -> nil;
-getNodeKey(Pid) ->							% Получить значение узла
+%-----------------------------------------Requests to the node--------------------------------------------------------------
+getNodeKey(nil) -> nil;							
+getNodeKey(Pid) ->							
 	SelfPid = self(),
 	Pid ! {getKey, SelfPid},						
 	receive
 		{key, Key} -> Key
 	end.
 	
-getNodeColor(nil) ->	black;	
-getNodeColor(Pid) ->							% Получить цвет узла
+getNodeColor(nil) ->	black;						% Leaves always black
+getNodeColor(Pid) ->						
 	SelfPid = self(),
 	Pid ! {getColor, SelfPid},						
 	receive
 		{color, Color} -> Color
 	end.	
 	
-getNodeParentPid(nil) -> nil;	
-getNodeParentPid(Pid) ->						% Получить ID предка узла
+getNodeParentPid(nil) -> nil;						 
+getNodeParentPid(Pid) ->					
 	SelfPid = self(),
 	Pid ! {getParentPid, SelfPid},
 	receive
 		{parentPid, ParentPid} -> ParentPid
 	end.
 
-getNodeLeftPid(nil)  ->	nil;	
-getNodeLeftPid(root) ->	nil;
-getNodeLeftPid(Pid)  ->							% Получить ID левого дочернего узла
+getNodeLeftPid(nil)  ->	nil;						
+getNodeLeftPid(root) ->	nil;						% Because the root - a fictitious
+getNodeLeftPid(Pid)  ->						
 	SelfPid = self(),
 	Pid ! {getLeftPid, SelfPid},
 	receive
@@ -97,7 +98,7 @@ getNodeLeftPid(Pid)  ->							% Получить ID левого дочерне�
 	end.
 
 getNodeRightPid(nil) ->	nil;	
-getNodeRightPid(Pid) ->							% Получить ID правого дочернего узла
+getNodeRightPid(Pid) ->							
 	SelfPid = self(),
 	Pid ! {getRightPid, SelfPid},
 	receive
@@ -115,7 +116,7 @@ getNode(Pid) ->
 
 
 changeNodeKey(_, nil)   -> {ok, changeNodeKey};
-changeNodeKey(Key, Pid) ->						% Заменить в узле с ID Pid значение на Key
+changeNodeKey(Key, Pid) ->					
 	SelfPid = self(),
 	Pid ! {changeKey, {Key, SelfPid}},
 	receive
@@ -123,7 +124,7 @@ changeNodeKey(Key, Pid) ->						% Заменить в узле с ID Pid зна�
 	end.
 
 changeNodeColor(_, nil)     -> {ok, changeNodeColor};
-changeNodeColor(Color, Pid) ->						% Заменить в узле с ID Pid цвет на Color
+changeNodeColor(Color, Pid) ->						
 	SelfPid = self(),
 	Pid ! {changeColor, {Color, SelfPid}},
 	receive
@@ -131,7 +132,7 @@ changeNodeColor(Color, Pid) ->						% Заменить в узле с ID Pid ц�
 	end.
 
 changeNodeParentPid(_, nil)         -> {ok, changeNodeParentPid};
-changeNodeParentPid(ParentPid, Pid) ->					% Заменить в узле с ID Pid предка на ParentPid
+changeNodeParentPid(ParentPid, Pid) ->					
 	SelfPid = self(),
 	Pid ! {changeParentPid, {ParentPid, SelfPid}},
 	receive
@@ -139,7 +140,7 @@ changeNodeParentPid(ParentPid, Pid) ->					% Заменить в узле с ID 
 	end.
 	
 changeNodeLeftPid(_, nil)       -> {ok, changeNodeLeftPid};	
-changeNodeLeftPid(LeftPid, Pid) ->					% Заменить в узле с ID Pid левого потомка на LeftPid
+changeNodeLeftPid(LeftPid, Pid) ->				
 	SelfPid = self(),
 	Pid ! {changeLeftPid, {LeftPid, SelfPid}},
 	receive
@@ -147,21 +148,13 @@ changeNodeLeftPid(LeftPid, Pid) ->					% Заменить в узле с ID Pid 
 	end.
 	
 changeNodeRightPid(_, nil)        -> {ok, changeNodeRightPid};	
-changeNodeRightPid(RightPid, Pid) ->					% Заменить в узле с ID Pid правого потомка на RightPid
+changeNodeRightPid(RightPid, Pid) ->					
 	SelfPid = self(),
 	Pid ! {changeRightPid, {RightPid, SelfPid}},
 	receive
 		{ok, changeRightPid} -> {ok, changeNodeRightPid}
 	end.
 	
-
-
-
-
-
-
-
-
 
 
 
