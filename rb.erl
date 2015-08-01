@@ -228,29 +228,29 @@ nodeLoop(Node = {Key, Color, ParentPid, LeftPid, RightPid}) ->
 			   SelfPid =:= RootPid ->					% Tree isn't empty, start searching
 				RightPid ! {search, SearchedKey};	
 			
-			   SearchedKey  =:=  Key                       -> 		% Если искомый узел 
+			   SearchedKey  =:=  Key                       -> 		
 				userPid  ! {search, exist, Color, SelfPid};
 			   
-			   SearchedKey   <   Key , LeftPid  =/= nil -> 			% Если узел в левом поддереве
+			   SearchedKey   <   Key , LeftPid  =/= nil -> 		
 			   	LeftPid  ! {search, SearchedKey};
 			   
-			   SearchedKey   >   Key , RightPid =/= nil -> 			% Если узел в правом поддереве
+			   SearchedKey   >   Key , RightPid =/= nil -> 			
 			   	RightPid ! {search, SearchedKey};
 			   
-			   SearchedKey   <   Key , LeftPid  =:= nil -> 			% Если узла нет - потенциальный родитель
+			   SearchedKey   <   Key , LeftPid  =:= nil -> 			% Node is not in the tree. Send potential parent of node
 			   	userPid  ! {search, parent, SelfPid};
 			   
-			   SearchedKey   >   Key , RightPid =:= nil -> 			% Если узла нет - потенциальный родитель
+			   SearchedKey   >   Key , RightPid =:= nil -> 			% Node is not in the tree. Send potential parent of node
 			   	userPid  ! {search, parent, SelfPid}
 			
 			end,
 			nodeLoop(Node);
 				
-		{insert, InsertedKey} ->						% Вставка в дерево
+		{insert, InsertedKey} ->						
 			SelfPid = self(),
 			RootPid = whereis(root),
 									
-			if SelfPid =:= RootPid , RightPid  =:= nil ->
+			if SelfPid =:= RootPid , RightPid  =:= nil ->			% Tree is empty
 				NewPid = spawn(fun() -> nodeLoop({InsertedKey, black, RootPid, nil, nil}) end),
                 		nodeLoop({Key, Color, nil, nil, NewPid});
 				
@@ -283,7 +283,7 @@ nodeLoop(Node = {Key, Color, ParentPid, LeftPid, RightPid}) ->
 			
 			end;
 			
-		insertBalance ->							% Балансировка дерева после вставки
+		insertBalance ->							% Balance tree after insert
 			SelfPid = self(),
 			RootPid = whereis(root),
 			RealRootPid = getNodeRightPid(RootPid),
