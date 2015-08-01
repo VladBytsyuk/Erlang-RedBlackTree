@@ -161,16 +161,16 @@ changeNodeRightPid(RightPid, Pid) ->
 
 
 	
-%------------------------------------Процесс обработки сообщений пользователя--------------------------------------------------
+%-----------------------------------------------User messages processing--------------------------------------------------
 userLoop() ->
 	RootPid = whereis(root),
 	receive
-		{search, Key} -> 
+		{search, Key} -> 						
 			RootPid ! {search, Key},
 			receive
 				{search, exist, Color, Pid} ->
 					io:format("Key: ~p  Color: ~p  Process: ~p ~n", [Key, Color, Pid]);
-				{search, parent, _} ->
+				{search, parent, _} ->				
 					io:format("Node doesn't exist. ~n")
 			end,
 			userLoop();
@@ -182,50 +182,50 @@ userLoop() ->
 	end.
 			
 			
-%-------------------------------------------------------Процесс узла-----------------------------------------------------------
+%---------------------------------------------------Node process-----------------------------------------------------------
 nodeLoop(Node = {Key, Color, ParentPid, LeftPid, RightPid}) ->
 	receive
-		{getKey, Pid} ->							% Поучить значение узла
+		{getKey, Pid} ->						
 			Pid ! {key, Key}, 
 			nodeLoop(Node);
-		{getColor, Pid} ->							% Получить цвет узла
+		{getColor, Pid} ->						
 			Pid ! {color, Color},
 			nodeLoop(Node);
-		{getParentPid, Pid} ->							% Получить ID предка узла
+		{getParentPid, Pid} ->						
 			Pid ! {parentPid, ParentPid},
 			nodeLoop(Node);
-		{getLeftPid, Pid} ->							% Получить ID левого потомка узла
+		{getLeftPid, Pid} ->						
 			Pid ! {leftPid, LeftPid},
 			nodeLoop(Node);
-		{getRightPid, Pid} ->							% Получить ID правого потомка узла
+		{getRightPid, Pid} ->						
 			Pid ! {rightPid, RightPid},
 			nodeLoop(Node);
 		
-		{changeKey,      {NewKey, Pid}}      ->					% Изменить значение узла
+		{changeKey,      {NewKey, Pid}}      ->					
 			Pid ! {ok, changeKey},
 			nodeLoop({NewKey, Color, ParentPid, LeftPid, RightPid});
-		{changeColor,    {NewColor, Pid}}    ->					% Изменить цвет узла
+		{changeColor,    {NewColor, Pid}}    ->					
 			Pid ! {ok, changeColor},
 			nodeLoop({Key, NewColor, ParentPid, LeftPid, RightPid});
-		{changeParentPid, {NewParentPid, Pid}} ->				% Изменить ID предка узла
+		{changeParentPid, {NewParentPid, Pid}} ->				
 			Pid ! {ok, changeParentPid},
 			nodeLoop({Key, Color, NewParentPid, LeftPid, RightPid});
-		{changeLeftPid,  {NewLeftPid, Pid}}  ->					% Изменить ID левого потомка узла
+		{changeLeftPid,  {NewLeftPid, Pid}}  ->					
 			Pid ! {ok, changeLeftPid},
 			nodeLoop({Key, Color, ParentPid, NewLeftPid, RightPid});
-		{changeRightPid, {NewRightPid, Pid}} ->					% Изменить ID правого потмка узла
+		{changeRightPid, {NewRightPid, Pid}} ->					
 			Pid ! {ok, changeRightPid},
 			nodeLoop({Key, Color, ParentPid, LeftPid, NewRightPid});			
 			
 			
-		{search, SearchedKey} ->						% Поиск в дереве по значению
+		{search, SearchedKey} ->						
 			SelfPid = self(),
 			RootPid = whereis(root),
 			
-			if SelfPid =:= RootPid , RightPid =:= nil ->
+			if SelfPid =:= RootPid , RightPid =:= nil ->			% Tree is empty
 				userPid  ! {search, parent, SelfPid};
 			   
-			   SelfPid =:= RootPid ->
+			   SelfPid =:= RootPid ->					% Tree isn't empty, start searching
 				RightPid ! {search, SearchedKey};	
 			
 			   SearchedKey  =:=  Key                       -> 		% Если искомый узел 
